@@ -85,7 +85,7 @@
         <header>
             <input type="search" id="search" placeholder="Search sounds..." autofocus>
             <div id="title">
-                <h1>Minecraft Sound Explorer</h1>
+                <h1>Sound Explorer</h1>
                 <p id="version"></p>
             </div>
         </header>
@@ -135,7 +135,7 @@
                 const response = await fetch("sounds.json");
                 const catalog = await response.json();
                 soundsByKey = catalog.sounds;
-                document.getElementById("version").textContent = catalog.version;
+                document.getElementById("version").textContent = "Minecraft " + catalog.version;
 
                 const container = document.getElementById("app");
                 const sortedKeys = Object.keys(soundsByKey).sort();

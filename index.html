@@ -25,9 +25,13 @@
 
             header {
                 display: flex;
-                justify-content: space-between;
-                align-items: flex-end;
+                align-items: center;
+                gap: 1.5rem;
                 margin-bottom: 1rem;
+            }
+
+            #title {
+                margin-left: auto;
             }
 
             #search {
@@ -36,12 +40,36 @@
                 color: light-dark(#333, #ccc);
                 border: 1px solid light-dark(#ddd, #333);
                 padding: 0.4rem 0.6rem;
-                width: 100%;
-                max-width: 400px;
+                width: 300px;
             }
 
             #search:focus {
                 outline: none;
+            }
+
+            #controls {
+                display: flex;
+                gap: 1.5rem;
+                font-size: 0.8rem;
+                align-items: center;
+            }
+
+            #controls label {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            #controls .label-name {
+                color: light-dark(#111, #e0e0e0);
+            }
+
+            #controls .label-value {
+                color: light-dark(#999, #555);
+            }
+
+            #controls input[type="range"] {
+                width: 200px;
             }
 
             #title h1 {
@@ -85,6 +113,27 @@
     <body>
         <header>
             <input type="search" id="search" placeholder="Search sounds..." autofocus>
+
+            <div id="controls">
+                <label>
+                    <span>
+                        <span class="label-name">Pitch</span>
+                        <span class="label-value" id="pitch-label">(1.0x)</span>
+                    </span>
+
+                    <input type="range" id="pitch" min="0" max="2" step="0.1" value="1">
+                </label>
+
+                <label>
+                    <span>
+                        <span class="label-name">Volume</span>
+                        <span class="label-value" id="volume-label">(100%)</span>
+                    </span>
+
+                    <input type="range" id="volume" min="0" max="1" step="0.05" value="1">
+                </label>
+            </div>
+
             <div id="title">
                 <h1>Sound Explorer</h1>
                 <p id="version"></p>
@@ -115,9 +164,13 @@
                 const variants = soundsByKey[soundKey];
                 const randomVariant = variants[Math.floor(Math.random() * variants.length)];
                 const hash = randomVariant.hash;
+
                 const audioUrl = "https://resources.download.minecraft.net/" + hash.slice(0, 2) + "/" + hash;
                 const audio = new Audio(audioUrl);
+                audio.playbackRate = parseFloat(document.getElementById("pitch").value);
+                audio.volume = parseFloat(document.getElementById("volume").value);
                 audio.play().catch(() => {});
+
                 currentAudio = audio;
                 currentPlayingElement = element;
                 element.classList.add("playing");
@@ -153,7 +206,16 @@
                 }
 
                 container.appendChild(fragment);
-                document.getElementById("search").addEventListener("input", event => filterSounds(event.target.value));
+                document.getElementById("search").addEventListener("input", (event) => filterSounds(event.target.value));
+                document.getElementById("pitch").addEventListener("input", (event) => {
+                    document.getElementById("pitch-label").textContent = "(" + parseFloat(event.target.value).toFixed(1) + "x)";
+                    if (currentAudio) currentAudio.playbackRate = parseFloat(event.target.value);
+                });
+
+                document.getElementById("volume").addEventListener("input", (event) => {
+                    document.getElementById("volume-label").textContent = "(" + Math.round(parseFloat(event.target.value) * 100) + "%)";
+                    if (currentAudio) currentAudio.volume = parseFloat(event.target.value);
+                });
             };
 
             init();

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="light dark">
+        <title>Minecraft Sound Explorer</title>
+        <style>
+            html, body {
+                height: 100%;
+                margin: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: ui-monospace, "Cascadia Code", "Fira Code", Menlo, monospace;
+                padding: 2rem;
+                background: light-dark(#fff, #111);
+                font-size: 0.9rem;
+                line-height: 1.6;
+                display: flex;
+                flex-direction: column;
+            }
+
+            header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+                margin-bottom: 1rem;
+            }
+
+            #search {
+                font: inherit;
+                background: light-dark(#f6f6f6, #222);
+                color: light-dark(#333, #ccc);
+                border: 1px solid light-dark(#ddd, #333);
+                padding: 0.4rem 0.6rem;
+                width: 100%;
+                max-width: 400px;
+            }
+
+            #search:focus {
+                outline: none;
+            }
+
+            #title h1 {
+                font-size: 0.9rem;
+                margin: 0;
+                color: light-dark(#111, #e0e0e0);
+                text-align: right;
+            }
+
+            #title p {
+                font-size: 0.8rem;
+                margin: 0;
+                color: light-dark(#999, #555);
+                text-align: right;
+            }
+
+            #app {
+                flex: 1;
+                overflow-y: auto;
+                border: 1px solid light-dark(#ddd, #333);
+                padding: 0.5rem 1rem;
+                outline: none;
+            }
+
+            .sound {
+                cursor: pointer;
+                color: light-dark(#999, #555);
+                user-select: none;
+            }
+
+            .sound:hover {
+                color: light-dark(#111, #e0e0e0);
+            }
+
+            .sound.playing {
+                color: light-dark(#2563eb, #60a5fa);
+            }
+        </style>
+    </head>
+
+    <body>
+        <header>
+            <input type="search" id="search" placeholder="Search sounds..." autofocus>
+            <div id="title">
+                <h1>Minecraft Sound Explorer</h1>
+                <p id="version"></p>
+            </div>
+        </header>
+
+        <div id="app"></div>
+
+        <script>
+            let currentAudio = null;
+            let currentPlayingElement = null;
+            let soundsByKey = {};
+            let soundElements = [];
+
+            const stopPlayback = () => {
+                if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio = null;
+                }
+                if (currentPlayingElement) {
+                    currentPlayingElement.classList.remove("playing");
+                    currentPlayingElement = null;
+                }
+            };
+
+            const playSound = (soundKey, element) => {
+                stopPlayback();
+                const variants = soundsByKey[soundKey];
+                const randomVariant = variants[Math.floor(Math.random() * variants.length)];
+                const hash = randomVariant.hash;
+                const audioUrl = "https://resources.download.minecraft.net/" + hash.slice(0, 2) + "/" + hash;
+                const audio = new Audio(audioUrl);
+                audio.play().catch(() => {});
+                currentAudio = audio;
+                currentPlayingElement = element;
+                element.classList.add("playing");
+                audio.addEventListener("ended", stopPlayback);
+            };
+
+            const filterSounds = (query) => {
+                const normalizedQuery = query.toLowerCase();
+
+                for (const element of soundElements) {
+                    element.hidden = normalizedQuery !== "" && !element.dataset.key.includes(normalizedQuery);
+                }
+            };
+
+            const init = async () => {
+                const response = await fetch("sounds.json");
+                const catalog = await response.json();
+                soundsByKey = catalog.sounds;
+                document.getElementById("version").textContent = catalog.version;
+
+                const container = document.getElementById("app");
+                const sortedKeys = Object.keys(soundsByKey).sort();
+                const fragment = document.createDocumentFragment();
+
+                for (const soundKey of sortedKeys) {
+                    const row = document.createElement("div");
+                    row.className = "sound";
+                    row.textContent = soundKey;
+                    row.dataset.key = soundKey;
+                    row.onclick = () => playSound(soundKey, this);
+                    fragment.appendChild(row);
+                    soundElements.push(row);
+                }
+
+                container.appendChild(fragment);
+                document.getElementById("search").addEventListener("input", event => filterSounds(event.target.value));
+            };
+
+            init();
+        </script>
+    </body>
+</html>
